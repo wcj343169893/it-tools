@@ -3,7 +3,7 @@ on:
   pull_request:
   push:
     branches:
-      - main
+      - zcq100
 jobs:
   test:
     timeout-minutes: 10
