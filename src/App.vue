@@ -38,15 +38,26 @@ body {
   min-height: 100%;
   margin: 0;
   padding: 0;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+  font-size: 14px;
 }
 
 html {
   height: 100%;
   margin: 0;
   padding: 0;
+  scroll-behavior: smooth;
 }
 
 * {
   box-sizing: border-box;
+}
+
+::selection {
+  background: rgba(30, 165, 76, 0.2);
+  color: inherit;
 }
 </style>

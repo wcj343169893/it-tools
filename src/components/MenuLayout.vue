@@ -1,51 +1,52 @@
 <script setup lang="ts">
-import { useStyleStore } from '@/stores/style.store';
+import { useThemeVars } from 'naive-ui';
 
-const styleStore = useStyleStore();
-const { isMenuCollapsed, isSmallScreen } = toRefs(styleStore);
-const siderPosition = computed(() => (isSmallScreen.value ? 'absolute' : 'static'));
+const themeVars = useThemeVars();
 </script>
 
 <template>
-  <n-layout has-sider>
-    <n-layout-sider
-      bordered
-      collapse-mode="width"
-      :collapsed-width="0"
-      :width="240"
-      :collapsed="isMenuCollapsed"
-      :show-trigger="false"
-      :native-scrollbar="false"
-      :position="siderPosition"
-    >
-      <slot name="sider" />
-    </n-layout-sider>
+  <n-layout class="menu-layout">
+    <n-layout-header bordered class="header">
+      <slot name="header" />
+    </n-layout-header>
     <n-layout class="content">
-      <slot name="content" />
-      <div v-show="isSmallScreen && !isMenuCollapsed" class="overlay" @click="isMenuCollapsed = true" />
+      <div class="content-inner">
+        <slot name="content" />
+      </div>
     </n-layout>
   </n-layout>
 </template>
 
 <style lang="less" scoped>
-.overlay {
-  position: absolute;
+.header {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  position: sticky;
   top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: #00000080;
-  cursor: pointer;
-}
-
-.content {
-  // background-color: #f1f5f9;
-  ::v-deep(.n-layout-scroll-container) {
-    padding: 26px;
-  }
+  z-index: 100;
+  background: v-bind('themeVars.bodyColor');
 }
 
 .n-layout {
-  height: 100vh;
+  min-height: 100vh;
+}
+
+.content {
+  background: v-bind('themeVars.bodyColor');
+  overflow: visible;
+
+  ::v-deep(.n-layout-scroll-container) {
+    padding: 26px;
+    overflow: visible;
+  }
+}
+
+.content-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  overflow: visible;
 }
 </style>

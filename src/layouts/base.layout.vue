@@ -1,18 +1,18 @@
 <script lang="ts" setup>
 import { NIcon, useThemeVars } from 'naive-ui';
 
-import { RouterLink } from 'vue-router';
-import { Heart, Home2, Menu2 } from '@vicons/tabler';
+import { RouterLink, useRoute } from 'vue-router';
+import { Home2, Menu2, Moon, Sun } from '@vicons/tabler';
+
+const route = useRoute();
 
 import { storeToRefs } from 'pinia';
-import HeroGradient from '../assets/hero-gradient.svg?component';
 import MenuLayout from '../components/MenuLayout.vue';
 import NavbarButtons from '../components/NavbarButtons.vue';
 import { useStyleStore } from '@/stores/style.store';
 import { config } from '@/config';
 import type { ToolCategory } from '@/tools/tools.types';
 import { useToolStore } from '@/tools/tools.store';
-import { useTracker } from '@/modules/tracker/tracker.services';
 import CollapsibleToolMenu from '@/components/CollapsibleToolMenu.vue';
 
 const themeVars = useThemeVars();
@@ -20,7 +20,6 @@ const styleStore = useStyleStore();
 const version = config.app.version;
 const commitSha = config.app.lastCommitSha.slice(0, 7);
 
-const { tracker } = useTracker();
 const { t } = useI18n();
 
 const toolStore = useToolStore();
@@ -30,189 +29,185 @@ const tools = computed<ToolCategory[]>(() => [
   ...(favoriteTools.value.length > 0 ? [{ name: t('tools.categories.favorite-tools'), components: favoriteTools.value }] : []),
   ...toolsByCategory.value,
 ]);
+
+const showDrawer = ref(false);
 </script>
 
 <template>
   <MenuLayout class="menu-layout" :class="{ isSmallScreen: styleStore.isSmallScreen }">
-    <template #sider>
-      <RouterLink to="/" class="hero-wrapper">
-        <HeroGradient class="gradient" />
-        <div class="text-wrapper">
-          <div class="title">
-            IT - TOOLS
-          </div>
-          <div class="divider" />
-          <div class="subtitle">
-            {{ $t('home.subtitle') }}
-          </div>
-        </div>
-      </RouterLink>
+    <template #header>
+      <div class="header-inner">
+        <div class="header-left">
+          <c-button
+            v-if="styleStore.isSmallScreen"
+            circle
+            variant="text"
+            :aria-label="$t('home.toggleMenu')"
+            @click="showDrawer = !showDrawer"
+          >
+            <NIcon size="25" :component="Menu2" />
+          </c-button>
 
-      <div class="sider-content">
-        <div v-if="styleStore.isSmallScreen" flex flex-col items-center>
-          <locale-selector w="90%" />
+          <RouterLink to="/" class="brand">
+            <span class="brand-title">IT-TOOLS</span>
+          </RouterLink>
 
-          <div flex justify-center>
-            <NavbarButtons />
-          </div>
         </div>
 
-        <CollapsibleToolMenu :tools-by-category="tools" />
+        <div class="header-right">
+          <command-palette />
 
-        <div class="footer">
-          <div>
-            IT-Tools
+          <locale-selector v-if="!styleStore.isSmallScreen" />
 
-            <c-link target="_blank" rel="noopener" :href="`https://github.com/CorentinTh/it-tools/tree/v${version}`">
-              v{{ version }}
-            </c-link>
+          <NavbarButtons />
 
-            <template v-if="commitSha && commitSha.length > 0">
-              -
-              <c-link
-                target="_blank"
-                rel="noopener"
-                type="primary"
-                :href="`https://github.com/CorentinTh/it-tools/tree/${commitSha}`"
-              >
-                {{ commitSha }}
-              </c-link>
-            </template>
-          </div>
-          <div>
-            © {{ new Date().getFullYear() }}
-            <c-link target="_blank" rel="noopener" href="https://corentin.tech?utm_source=it-tools&utm_medium=footer">
-              Corentin Thomasset
-            </c-link>
-          </div>
+          <c-button
+            v-if="styleStore.isSmallScreen"
+            circle
+            variant="text"
+            :aria-label="styleStore.isDarkTheme ? $t('home.nav.lightMode') : $t('home.nav.darkMode')"
+            @click="styleStore.toggleDark()"
+          >
+            <NIcon size="22" :component="styleStore.isDarkTheme ? Sun : Moon" />
+          </c-button>
         </div>
       </div>
     </template>
 
     <template #content>
-      <div flex items-center justify-center gap-2>
-        <c-button
-          circle
-          variant="text"
-          :aria-label="$t('home.toggleMenu')"
-          @click="styleStore.isMenuCollapsed = !styleStore.isMenuCollapsed"
-        >
-          <NIcon size="25" :component="Menu2" />
-        </c-button>
+      <!-- Mobile drawer -->
+      <n-drawer v-model:show="showDrawer" placement="left" :width="280">
+        <n-drawer-content>
+          <template #header>
+            <RouterLink to="/" class="drawer-brand" @click="showDrawer = false">
+              IT-TOOLS
+            </RouterLink>
+          </template>
+          <div class="drawer-menu">
+            <CollapsibleToolMenu :tools-by-category="tools" @navigate="showDrawer = false" />
+          </div>
+        </n-drawer-content>
+      </n-drawer>
 
-        <c-tooltip :tooltip="$t('home.home')" position="bottom">
-          <c-button to="/" circle variant="text" :aria-label="$t('home.home')">
-            <NIcon size="25" :component="Home2" />
-          </c-button>
-        </c-tooltip>
-
-        <c-tooltip :tooltip="$t('home.uiLib')" position="bottom">
-          <c-button v-if="config.app.env === 'development'" to="/c-lib" circle variant="text" :aria-label="$t('home.uiLib')">
-            <icon-mdi:brush-variant text-20px />
-          </c-button>
-        </c-tooltip>
-
-        <command-palette />
-
-        <locale-selector v-if="!styleStore.isSmallScreen" />
-
-        <div>
-          <NavbarButtons v-if="!styleStore.isSmallScreen" />
+      <div class="tool-nav" :class="{ 'hidden-mobile': styleStore.isSmallScreen }">
+        <div v-if="!styleStore.isSmallScreen" class="horizontal-menu-wrapper">
+          <RouterLink to="/" class="horizontal-trigger home-link" :class="{ active: route.path === '/' }">
+            <NIcon size="18" :component="Home2" />
+            <span>{{ $t('home.home') }}</span>
+          </RouterLink>
+          <CollapsibleToolMenu :tools-by-category="tools" horizontal />
         </div>
-
-        <c-tooltip position="bottom" :tooltip="$t('home.support')">
-          <c-button
-            round
-            href="https://www.buymeacoffee.com/cthmsst"
-            rel="noopener"
-            target="_blank"
-            class="support-button"
-            :bordered="false"
-            @click="() => tracker.trackEvent({ eventName: 'Support button clicked' })"
-          >
-            {{ $t('home.buyMeACoffee') }}
-            <NIcon v-if="!styleStore.isSmallScreen" :component="Heart" ml-2 />
-          </c-button>
-        </c-tooltip>
       </div>
+
       <slot />
+
+      <div class="footer">
+        <c-link :href="`https://github.com/zcq100/it-tools/tree/v${version}`">
+          v{{ version }}
+        </c-link>
+      </div>
     </template>
   </MenuLayout>
 </template>
 
 <style lang="less" scoped>
-// ::v-deep(.n-layout-scroll-container) {
-//     @percent: 4%;
-//     @position: 25px;
-//     @size: 50px;
-//     @color: #eeeeee25;
-//     background-image: radial-gradient(@color @percent, transparent @percent),
-//         radial-gradient(@color @percent, transparent @percent);
-//     background-position: 0 0, @position @position;
-//     background-size: @size @size;
-// }
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  gap: 16px;
+}
 
-.support-button {
-  background: rgb(37, 99, 108);
-  background: linear-gradient(48deg, rgba(37, 99, 108, 1) 0%, rgba(59, 149, 111, 1) 60%, rgba(20, 160, 88, 1) 100%);
-  color: #fff !important;
-  transition: padding ease 0.2s !important;
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.brand {
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+
+  .brand-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: v-bind('themeVars.primaryColor');
+    letter-spacing: 1px;
+  }
+}
+
+.header-nav {
+  display: flex;
+  align-items: center;
+  margin-left: 24px;
+}
+
+.tool-nav {
+  margin-bottom: 4px;
+}
+
+.horizontal-menu-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+
+.home-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  color: v-bind('themeVars.textColor3');
+  transition: all 0.2s ease;
+  white-space: nowrap;
 
   &:hover {
-    color: #fff;
-    padding-left: 30px;
-    padding-right: 30px;
+    background: v-bind('themeVars.dividerColor + "40"');
+    color: v-bind('themeVars.textColor2');
   }
+
+  &.active {
+    background: v-bind('themeVars.primaryColor + "15"');
+    color: v-bind('themeVars.primaryColor');
+  }
+}
+
+.hidden-mobile {
+  @media (max-width: 700px) {
+    display: none;
+  }
+}
+
+.drawer-brand {
+  text-decoration: none;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary-color, #1ea54c);
+}
+
+.drawer-menu {
+  margin-top: 8px;
 }
 
 .footer {
   text-align: center;
-  color: #838587;
-  margin-top: 20px;
-  padding: 20px 0;
-}
-
-.sider-content {
-  padding-top: 160px;
-  padding-bottom: 200px;
-}
-
-.hero-wrapper {
-  position: absolute;
-  display: block;
-  left: 0;
-  width: 100%;
-  z-index: 10;
-  overflow: hidden;
-
-  .gradient {
-    margin-top: -65px;
-  }
-
-  .text-wrapper {
-    position: absolute;
-    left: 0;
-    width: 100%;
-    text-align: center;
-    top: 16px;
-    color: #fff;
-
-    .title {
-      font-size: 25px;
-      font-weight: 600;
-    }
-
-    .divider {
-      width: 50px;
-      height: 2px;
-      border-radius: 4px;
-      background-color: v-bind('themeVars.primaryColor');
-      margin: 0 auto 5px;
-    }
-
-    .subtitle {
-      font-size: 16px;
-    }
-  }
+  color: #94a3b8;
+  padding: 12px 0 20px;
+  font-size: 13px;
 }
 </style>
