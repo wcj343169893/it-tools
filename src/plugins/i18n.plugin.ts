@@ -3,9 +3,17 @@ import { get } from '@vueuse/core';
 import type { Plugin } from 'vue';
 import { createI18n } from 'vue-i18n';
 
+const availableLocales = Object.keys(messages as Record<string, unknown>);
+
+function detectBrowserLocale(): string {
+  const lang = (navigator.language || 'en').split('-')[0];
+  return availableLocales.includes(lang) ? lang : 'en';
+}
+
 const i18n = createI18n({
   legacy: false,
-  locale: 'en',
+  locale: detectBrowserLocale(),
+  fallbackLocale: 'en',
   messages,
 });
 
